@@ -32,6 +32,9 @@
 #include <linux/mmdebug.h>
 #include <linux/mm_types.h>
 #include <linux/sched.h>
+#ifdef CONFIG_KVM_ARM_PVOPS
+#include <kvm/pvops.h>
+#endif
 
 extern struct page *vmemmap;
 
@@ -275,8 +278,12 @@ static inline void __check_racy_pte_update(struct mm_struct *mm, pte_t *ptep,
 static inline void set_pte_at(struct mm_struct *mm, unsigned long addr,
 			      pte_t *ptep, pte_t pte)
 {
-	if (pte_present(pte) && pte_user_exec(pte) && !pte_special(pte))
+	if (pte_present(pte) && pte_user_exec(pte) && !pte_special(pte)) {
+		// hypcall wx_map_text
+		u64 addr = pte_pfn(pte) << PAGE_SHIFT;
+		kvm_pvops((void *)KVM_WX_PAGE_MAP, addr);
 		__sync_icache_dcache(pte);
+	}
 
 	__check_racy_pte_update(mm, ptep, pte);
 
