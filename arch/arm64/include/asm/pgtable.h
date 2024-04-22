@@ -280,8 +280,7 @@ static inline void set_pte_at(struct mm_struct *mm, unsigned long addr,
 {
 	if (pte_present(pte) && pte_user_exec(pte) && !pte_special(pte)) {
 		// hypcall wx_map_text
-		u64 paddr_ = __pte_to_phys(pte);
-		kvm_pvops((void *)KVM_WX_PAGE_MAP, paddr_);
+		kvm_pvops((void *)KVM_WX_PAGE_MAP, pte);
 		__sync_icache_dcache(pte);
 	}
 
